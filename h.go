@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -29,9 +31,19 @@ type HttpHelper struct {
 
 // NewHttpHelper создает новый экземпляр HttpHelper
 func NewHttpHelper() *HttpHelper {
+	//req.ProxyHeader.Set("User-Agent", "Wget/1.9.1")
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConnsPerHost = 10
+	transport.GetProxyConnectHeader = func(ctx context.Context, proxyURL *url.URL, target string) (http.Header, error) {
+		return http.Header{"User-Agent": []string{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"}}, nil
+	}
+	cl := http.Client{
+		Timeout:   3 * time.Second,
+		Transport: transport,
+	}
 	uri := ""
 	cook, head, param := []pair{}, []pair{}, []pair{}
-	return &HttpHelper{http.DefaultClient, nil, uri, cook, head, param, []pair{}}
+	return &HttpHelper{&cl, nil, uri, cook, head, param, []pair{}}
 }
 
 // URL устанавливает URL, на который пойдет запрос
@@ -108,7 +120,9 @@ func (h *HttpHelper) Get() *HttpHelperResponse {
 	for _, hd := range h.headers {
 		h.req.Header.Add(hd.k, hd.v)
 	}
+	fmt.Println("GET ", h.req.Header)
 	resp, err := h.client.Do(h.req)
+	fmt.Println("RESP ", resp.Request.Header)
 	if err != nil {
 		return &HttpHelperResponse{0, "", err, resp}
 	} else {

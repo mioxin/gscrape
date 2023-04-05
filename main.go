@@ -2,26 +2,16 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
-func get_hresp(h, parm string) *HttpHelperResponse {
-	resp := NewHttpHelper().URL(h).
-		Header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36").
-		Header("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7").
-		Header("accept-encoding", "gzip, deflate, br").
-		Param(PARAM_KEY, parm).
-		Get()
-	return resp
+type Converter interface {
+	GetModifySend(in chan any, out chan []byte)
 }
 
 func CleanPhonNumber(phone_num string) string {
@@ -65,39 +55,15 @@ func GetMobileOnly(phones string) []string {
 	return ph
 }
 
-func GetSpesialInfo(str string) string {
-	spec := ""
-	arr := strings.Split(str, "Специфика: ")
-	if len(arr) > 1 && len(arr[1]) > 3 {
-		spec = arr[1]
-	}
-	return spec
-}
-
-func GetJsonOrg(in chan any, out chan []byte, num int) {
-	defer close(out)
-	for b := range in {
-		s := b.(*goquery.Selection)
-		phones := GetMobileOnly(strings.TrimSpace(s.Find("div.phone_icon").Text()))
-		spec := GetSpesialInfo(s.Find("p").Text())
-		if len(phones) > 0 {
-			neworg := Org{s.Find("a.name_link").Text(), s.Find("a.category_link").Text(), spec, phones}
-			jneworg, _ := json.Marshal(neworg)
-			out <- jneworg
-		}
-	}
-	//out <- []byte("out GetJsonOrg...")
-	fmt.Println("<<<<< CLOSE", num)
-}
-
 func Get_SaveData(arg ...any) error {
 	fout := arg[0].(*bufio.Writer)
-	i := arg[1].(int)
+	request := arg[1].(*HttpHelper)
 	mt := arg[2].(*sync.Mutex)
-	wg := arg[3].(*sync.WaitGroup)
-	defer wg.Done()
+	count := arg[3].(int)
 
-	r := get_hresp(HREF, strconv.Itoa(i))
+	var h_block Converter = NewOrgJson(count)
+
+	r := request.Get()
 	if r.err != nil {
 		log.Println("Get_SaveData: error END. ", r.err)
 		return r.err
@@ -111,12 +77,12 @@ func Get_SaveData(arg ...any) error {
 	}
 
 	html_Block_chan := make(chan any)
-	json_org := make(chan []byte)
+	out_chan := make(chan []byte)
 
-	go GetJsonOrg(html_Block_chan, json_org, i)
 	go r.GetHtmlBySelector(SELECTOR, html_Block_chan)
+	go h_block.GetModifySend(html_Block_chan, out_chan)
 
-	for byt := range json_org {
+	for byt := range out_chan {
 		mt.Lock()
 		_, err := fout.Write(byt)
 		if err != nil {
@@ -132,7 +98,6 @@ func Get_SaveData(arg ...any) error {
 
 func main() {
 	time_start := time.Now()
-	//http://petropavlovsk.b2b.ivest.kz/proizvodstvo/?Company_page=2
 	f, err := os.OpenFile(OUT_FILE, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		log.Fatal("Cant open ouput file", OUT_FILE, "\r\n", err)
@@ -142,34 +107,13 @@ func main() {
 	fout := bufio.NewWriter(f)
 	defer fout.Flush()
 
-	pool := Newpool(3)
+	pool := Newpool(10)
 	mutex := new(sync.Mutex)
-	wg := new(sync.WaitGroup)
-LOOP:
-	for i := 1; i <= PARAM_VALUE_MAX; i++ {
-		wg.Add(1)
-		go pool.worker(Get_SaveData, fout, i, mutex, wg)
-		select {
-		case e := <-pool.err:
-			if e != nil {
-				fmt.Println("error from pool", e)
-				break LOOP
-			}
-		default:
-		}
+	for ind, req := range GetUrlForScrape() {
+		go pool.worker(Get_SaveData, fout, req, mutex, ind)
+		//fmt.Printf("pool.Wait_g: %v\n", )
 	}
-	// go func() {
-	for {
-		if e, ok := <-pool.err; ok {
-			fmt.Println("error from pool IN END", e)
-
-		} else {
-			break
-		}
-
-	}
-	//}()
-	wg.Wait()
-	log.Printf("END. OK... Time %v ms.\n", time.Since(time_start).Milliseconds())
+	pool.Wait_g.Wait()
+	log.Printf("END. OK... Time %v ms.\n WG %v", time.Since(time_start).Milliseconds(), pool.Wait_g)
 
 }
