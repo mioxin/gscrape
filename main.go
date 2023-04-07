@@ -36,20 +36,20 @@ func CleanPhonNumber(phone_num string) string {
 
 func GetMobileOnly(phones string) []string {
 	ph := make([]string, 0)
+	phones = strings.TrimSpace(phones)
+	if phones == "" {
+		return ph
+	}
 	arr_ph := strings.Split(phones, ";")
 	arr_ph2 := strings.Split(phones, ",")
 	if len(arr_ph) < len(arr_ph2) {
 		arr_ph = arr_ph2
 	}
+
 	for _, p := range arr_ph {
-		p = strings.TrimSpace(p)
-		if strings.HasPrefix(p, "8") || strings.HasPrefix(p, "+7") {
-			if !(strings.HasPrefix(p, "8715") || strings.HasPrefix(p, "8 715") || strings.HasPrefix(p, "8(715") ||
-				strings.HasPrefix(p, "8 (715") || strings.HasPrefix(p, "8-(715") || strings.HasPrefix(p, "8-715") ||
-				strings.HasPrefix(p, "+7715") || strings.HasPrefix(p, "+7 715") || strings.HasPrefix(p, "+7(715") ||
-				strings.HasPrefix(p, "+7 (715") || strings.HasPrefix(p, "+7-(715") || strings.HasPrefix(p, "+7-715")) {
-				ph = append(ph, CleanPhonNumber(p))
-			}
+		p = CleanPhonNumber(strings.TrimSpace(p))
+		if strings.HasPrefix(p, "+7") && !strings.HasPrefix(p, "+7715") {
+			ph = append(ph, p)
 		}
 	}
 	return ph
@@ -86,13 +86,13 @@ func Get_SaveData(arg ...any) error {
 		mt.Lock()
 		_, err := fout.Write(byt)
 		if err != nil {
-			log.Println(err, string(byt))
+			log.Println("Get_SaveData: ", err, string(byt))
 		}
 		fout.Write([]byte("\r\n"))
 		mt.Unlock()
 	}
 
-	log.Println(r.response.Request.URL)
+	log.Println("Get_SaveData: ", r.response.Request.URL)
 	return nil
 }
 
@@ -109,11 +109,12 @@ func main() {
 
 	pool := Newpool(10)
 	mutex := new(sync.Mutex)
-	for ind, req := range GetUrlForScrape() {
-		go pool.worker(Get_SaveData, fout, req, mutex, ind)
+	for num_worker, req := range GetUrlForScrape() {
+		//pool.Wait_g.Add(1)
+		pool.worker(Get_SaveData, fout, req, mutex, num_worker)
 		//fmt.Printf("pool.Wait_g: %v\n", )
 	}
 	pool.Wait_g.Wait()
-	log.Printf("END. OK... Time %v ms.\n WG %v", time.Since(time_start).Milliseconds(), pool.Wait_g)
+	log.Printf("END. OK... Time %v ms.", time.Since(time_start).Milliseconds())
 
 }
