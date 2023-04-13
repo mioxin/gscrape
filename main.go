@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -10,111 +12,110 @@ import (
 	"time"
 )
 
-type Converter interface {
-	GetModifySend(in chan any, out chan []byte)
+var (
+	input_file  string
+	output_file string
+	verbouse    bool
+	help        bool
+	workers     int
+)
+var input_data string
+var output_data io.Writer
+
+func init() {
+	flag.BoolVar(&verbouse, "v", false, "Output fool log to StdOut (shorthand)")
+	flag.BoolVar(&verbouse, "verbouse", false, "Output fool log to StdOut")
+	flag.BoolVar(&help, "h", false, "Show help (shorthand)")
+	flag.BoolVar(&help, "help", false, "Show help")
+	flag.StringVar(&input_file, "i", "", "Input web src for scraping data. If the flag is absent then input should from last argument.")
+	flag.StringVar(&output_file, "o", "", "File for result output. If the flag is absent then output will to the StdOut.")
+	flag.IntVar(&workers, "w", 5, "The number of workers working in the same time.")
+
 }
 
-func CleanPhonNumber(phone_num string) string {
-	clear_num := []rune("")
-	cache := make(map[rune]struct{})
-	for _, ch := range phone_num {
-		_, inMap := cache[ch]
-		if inMap || strings.ContainsRune("0123456789", ch) {
-			clear_num = append(clear_num, ch)
-			cache[ch] = struct{}{}
+func showHelp() {
+	flag.VisitAll(func(f *flag.Flag) {
+		if f.DefValue == "" {
+			fmt.Printf("\t-%s: %s\n", f.Name, f.Usage)
+		} else {
+			fmt.Printf("\t-%s: %s (Default: %s)\n", f.Name, f.Usage, f.DefValue)
 		}
-	}
-	if clear_num[0] == rune('8') {
-		clear_num = append([]rune("+7"), clear_num[1:]...)
-	} else if clear_num[0] == rune('7') && len(clear_num) < 11 {
-		clear_num = append([]rune("+7"), clear_num...)
-	} else {
-		clear_num = append([]rune("+"), clear_num...)
-	}
-	return string(clear_num)
+	})
+	os.Exit(0)
 }
 
-func GetMobileOnly(phones string) []string {
-	ph := make([]string, 0)
-	phones = strings.TrimSpace(phones)
-	if phones == "" {
-		return ph
+func parsFlags() {
+	if help {
+		showHelp()
 	}
-	arr_ph := strings.Split(phones, ";")
-	arr_ph2 := strings.Split(phones, ",")
-	if len(arr_ph) < len(arr_ph2) {
-		arr_ph = arr_ph2
-	}
-
-	for _, p := range arr_ph {
-		p = CleanPhonNumber(strings.TrimSpace(p))
-		if strings.HasPrefix(p, "+7") && !strings.HasPrefix(p, "+7715") {
-			ph = append(ph, p)
-		}
-	}
-	return ph
-}
-
-func Get_SaveData(arg ...any) error {
-	fout := arg[0].(*bufio.Writer)
-	request := arg[1].(*HttpHelper)
-	mt := arg[2].(*sync.Mutex)
-	count := arg[3].(int)
-
-	var h_block Converter = NewOrgJson(count)
-
-	r := request.Get()
-	if r.err != nil {
-		log.Println("Get_SaveData: error END. ", r.err)
-		return r.err
-	}
-	if !r.OK() {
-		log.Println("Get_SaveData: error END. ", r.Status)
-		return r.err
-	}
-	for _, c := range r.response.Cookies() {
-		fmt.Println(c.Name, c.Value)
-	}
-
-	html_Block_chan := make(chan any)
-	out_chan := make(chan []byte)
-
-	go r.GetHtmlBySelector(SELECTOR, html_Block_chan)
-	go h_block.GetModifySend(html_Block_chan, out_chan)
-
-	for byt := range out_chan {
-		mt.Lock()
-		_, err := fout.Write(byt)
+	if !verbouse {
+		output_log, err := os.OpenFile("gscrape.log", os.O_RDWR|os.O_CREATE, 0666)
 		if err != nil {
-			log.Println("Get_SaveData: ", err, string(byt))
+			log.Fatal("Cant open ouput file for loging gscrape.log.\n", err)
 		}
-		fout.Write([]byte("\r\n"))
-		mt.Unlock()
+		log.SetOutput(output_log)
 	}
 
-	log.Println("Get_SaveData: ", r.response.Request.URL)
-	return nil
+	if output_file == "" {
+		output_data = os.Stdout
+	} else {
+		out, err := os.OpenFile(output_file, os.O_RDWR|os.O_CREATE, 0666)
+		if err != nil {
+			log.Fatal("Cant open ouput file", output_file, "\r\n", err)
+		}
+		output_data = out
+	}
+
+	switch {
+	case input_file != "":
+		data, err := os.ReadFile(input_file)
+		if err != nil {
+			panic(err)
+		}
+		input_data = string(data)
+	case flag.Arg(0) != "":
+		input_data = flag.Arg(0)
+	default:
+		fmt.Println("A flag is absent. The input file flag is expected.")
+		showHelp()
+	}
+}
+
+func run(HREF string, f *io.Writer) error {
+	fout := bufio.NewWriter(*f)
+	defer fout.Flush()
+	pool := Newpool(workers)
+	mutex := new(sync.Mutex)
+	href_in := bufio.NewReader(strings.NewReader(HREF))
+
+	for task := range NewTasks(href_in) {
+		pool.worker(task.parse, NewOrgJson(task.num), fout, mutex)
+	}
+
+	pool.Wait_g.Wait()
+	return pool.err
 }
 
 func main() {
 	time_start := time.Now()
-	f, err := os.OpenFile(OUT_FILE, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal("Cant open ouput file", OUT_FILE, "\r\n", err)
+	flag.Parse()
+
+	parsFlags()
+
+	out := output_file
+	if output_file == "" {
+		out = "StdOut"
 	}
-	defer f.Close()
-
-	fout := bufio.NewWriter(f)
-	defer fout.Flush()
-
-	pool := Newpool(10)
-	mutex := new(sync.Mutex)
-	for num_worker, req := range GetUrlForScrape() {
-		//pool.Wait_g.Add(1)
-		pool.worker(Get_SaveData, fout, req, mutex, num_worker)
-		//fmt.Printf("pool.Wait_g: %v\n", )
+	if input_file == "" {
+		fmt.Printf("output_file: %s\nworkers: %d\n", out, workers)
+	} else {
+		fmt.Printf("output_file: %s\ninput_file: %s\nworkers: %d\n", out, input_file, workers)
 	}
-	pool.Wait_g.Wait()
-	log.Printf("END. OK... Time %v ms.", time.Since(time_start).Milliseconds())
 
+	run(input_data, &output_data)
+	if true {
+		fmt.Printf("END. Errors in log... Time %v ms.", time.Since(time_start).Milliseconds())
+	} else {
+		fmt.Printf("END. OK... Time %v ms.", time.Since(time_start).Milliseconds())
+	}
 }

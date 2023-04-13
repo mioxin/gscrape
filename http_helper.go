@@ -6,12 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 type pair struct {
@@ -165,7 +162,7 @@ func (r *HttpHelperResponse) OK() bool {
 	if r.StatusCode >= 200 && r.StatusCode <= 302 {
 		return true
 	}
-	r.err = fmt.Errorf("HttpHelperResponse.JSON: error request %v, %v", r.response.Request.URL.String(), r.Status)
+	r.err = fmt.Errorf("HttpHelperResponse.OK: error request %v, %v", r.response.Request.URL.String(), r.Status)
 	return false
 }
 
@@ -204,21 +201,6 @@ func (r *HttpHelperResponse) JSON(v any) {
 	} else {
 		r.err = fmt.Errorf("HttpHelperResponse.JSON: error %v is not valid json", r.String())
 	}
-}
-
-// GetTegByAttr возвращает блок HTMLответа по заданному selector в канал
-// The selector is jQuery style selector like "div.order" (<div class=order>)
-func (r *HttpHelperResponse) GetHtmlBySelector(selector string, out_ch chan any) {
-	defer close(out_ch)
-	// Load the HTML document
-	doc, err := goquery.NewDocumentFromReader(r.response.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer r.response.Body.Close()
-	doc.Find(selector).Each(func(i int, s *goquery.Selection) {
-		out_ch <- s
-	})
 }
 
 // Err возвращает ошибку, которая возникла при выполнении запроса

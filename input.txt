@@ -1,0 +1,13 @@
+//https://petropavlovsk.b2b.ivest.kz/zhivotnovodstvo-selskoe-hozyaystvo
+//"https://petropavlovsk.b2b.ivest.kz/reklama-smi?Company_page=[1:2]"
+//"https://petropavlovsk.b2b.ivest.kz/medicina?Company_page=[1:3]"
+//"https://petropavlovsk.b2b.ivest.kz/gosudarstvo-i-pravo?Company_page=[1:4]"
+//"https://petropavlovsk.b2b.ivest.kz/finansy?Company_page=[1:4]"
+//"https://petropavlovsk.b2b.ivest.kz/telekommunikacii-i-svyaz"
+//"https://petropavlovsk.b2b.ivest.kz/dosug?Company_page=[1:8]"
+//"https://petropavlovsk.b2b.ivest.kz/obrazovanie?Company_page=[1:4]"
+//"https://petropavlovsk.b2b.ivest.kz/transport?Company_page=[1:7]"
+"https://petropavlovsk.b2b.ivest.kz/uslugi?Company_page=[4:10]"
+"https://petropavlovsk.b2b.ivest.kz/magaziny-i-torgovye-organizacii?Company_page=[1:14]"
+"https://petropavlovsk.b2b.ivest.kz/stroitelnye-materialy-i-instrumenty?Company_page=[1:6]"
+"https://petropavlovsk.b2b.ivest.kz/proizvodstvo?Company_page=[1:5]"
