@@ -8,10 +8,10 @@ __gscrape <-h> <-t NNN> <-w NNN> <-o output_file> -i input_file <url>__
 ##### Flags:
 -h -help:&emsp;&emsp;Show help (Default: false)\
 -t:&emsp;&emsp;&emsp;&emsp;The timeout in seconds for waiting a responses from web sites. (Default: 5)\
--v -verbouse:   Output fool log to StdOut (Default: false. Loging to the file gscrape.log in the local dir)\
+-v -verbouse: Output fool log to StdOut (Default: false. Loging to the file gscrape.log in the local dir)\
 -w:&emsp;&emsp;&emsp;&emsp;The number of workers working in the same time. (Default: 5)\
--o: &emsp;&emsp;&emsp;&emsp;File for result output. If the flag is absent then output will to the StdOut.\
--i: &emsp;&emsp;&emsp;&emsp;Input web src for scraping data. If the flag is absent then input should from last argument.
+-o:&emsp;&emsp;&emsp;&emsp;File for result output. If the flag is absent then output will to the StdOut.\
+-i:&emsp;&emsp;&emsp;&emsp;Input web src for scraping data. If the flag is absent then input should from last argument.
 
 The list of URLs for processing defined in the input file or in the command line (one URL). The parameters in the URL can include the masks of the types:\
 [nnn:nnn] - range between numbers not including last number (GO slice style)\
