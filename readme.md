@@ -15,9 +15,9 @@ __gsscrape <-h> <-t NNN> <-w NNN> <-o output_file> -i input_file <url>__
 
 The list of URLs for processing defined in the input file or in the command line (one URL). The parameters in the URL can include the masks of the types:\
 [nnn:nnn] - range between numbers not including last number (GO slice style)\
-[word1;word2;word3] - enumeration of strings\
+[word1;word2;word3] - enumeration of strings
 
-For exaple the mask\
+For exaple the mask
 ```
 html://www.site.com/path&chapter=[one;two]?page=[1:3]
 ```
