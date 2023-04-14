@@ -21,7 +21,7 @@ For exaple the mask
 ```
 html://www.site.com/path?chapter=[one;two]&page=[1:3]
 ```
-will trasform to tje URLs:
+will trasform to the URLs:
 ```
 html://www.site.com/path?chapter=one&page=1
 html://www.site.com/path?chapter=one&page=2
