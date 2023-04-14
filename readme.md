@@ -4,7 +4,7 @@ __gscrape__ is utility for scraping data from HTML structurs and saving to outpu
 
 Usage:
 ---
-__gscrape <-h> <-t NNN> <-w NNN> <-o output_file> -i input_file <url>__
+__gscrape <-h> <-t NNN> <-w NNN> <-o output_file> -i input_file \<url\>__
 ##### Flags:
 -h -help:&emsp;&emsp;Show help (Default: false)\
 -t:&emsp;&emsp;&emsp;&emsp;The timeout in seconds for waiting a responses from web sites. (Default: 5)\
