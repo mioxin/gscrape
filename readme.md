@@ -6,6 +6,7 @@ Usage:
 ---
 __gscrape <-h> <-t NNN> <-w NNN> <-o output_file> -i input_file <url>__
 ##### Flags:
+  |-|-|
 |-h -help:       |Show help (Default: false)|\
 |-t:             |The timeout in seconds for waiting a responses from web sites. (Default: 5)|\
 -v -verbouse:   |Output fool log to StdOut (Default: false. Loging to the file gscrape.log in the local dir)\
