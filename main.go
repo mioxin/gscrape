@@ -13,11 +13,12 @@ import (
 )
 
 var (
-	input_file  string
-	output_file string
-	verbouse    bool
-	help        bool
-	workers     int
+	input_file       string
+	output_file      string
+	verbouse         bool
+	help             bool
+	workers          int
+	timeout_respones int
 )
 var input_data string
 var output_data io.Writer
@@ -30,6 +31,7 @@ func init() {
 	flag.StringVar(&input_file, "i", "", "Input web src for scraping data. If the flag is absent then input should from last argument.")
 	flag.StringVar(&output_file, "o", "", "File for result output. If the flag is absent then output will to the StdOut.")
 	flag.IntVar(&workers, "w", 5, "The number of workers working in the same time.")
+	flag.IntVar(&timeout_respones, "t", 5, "The timeout in seconds for waiting a responses from web sites.")
 
 }
 
@@ -76,7 +78,7 @@ func parsFlags() {
 	case flag.Arg(0) != "":
 		input_data = flag.Arg(0)
 	default:
-		fmt.Println("A flag is absent. The input file flag is expected.")
+		fmt.Println("A flag is absent. The input file flag is expected...")
 		showHelp()
 	}
 }

@@ -35,7 +35,7 @@ func NewHttpHelper() *HttpHelper {
 		return http.Header{"User-Agent": []string{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"}}, nil
 	}
 	cl := http.Client{
-		Timeout:   5 * time.Second,
+		Timeout:   time.Duration(timeout_respones) * time.Second,
 		Transport: transport,
 	}
 	uri := ""
