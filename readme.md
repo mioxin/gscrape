@@ -19,13 +19,13 @@ The list of URLs for processing defined in the input file or in the command line
 
 For exaple the mask
 ```
-html://www.site.com/path&chapter=[one;two]?page=[1:3]
+html://www.site.com/path?chapter=[one;two]&page=[1:3]
 ```
 will trasform to tje URLs:
 ```
-html://www.site.com/path&chapter=one?page=1
-html://www.site.com/path&chapter=one?page=2
-html://www.site.com/path&chapter=two?page=1
-html://www.site.com/path&chapter=two?page=2
+html://www.site.com/path?chapter=one&page=1
+html://www.site.com/path?chapter=one&page=2
+html://www.site.com/path?chapter=two&page=1
+html://www.site.com/path?chapter=two&page=2
 ```
 The line in the input file may be commented by "//"
