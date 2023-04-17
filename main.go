@@ -72,7 +72,7 @@ func parsFlags() {
 	case input_file != "":
 		data, err := os.ReadFile(input_file)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		input_data = string(data)
 	case flag.Arg(0) != "":
@@ -119,5 +119,6 @@ func main() {
 		fmt.Printf("END. Errors in log... Time %v ms.\n", time.Since(time_start).Milliseconds())
 	} else {
 		fmt.Printf("END. OK... Time %v ms.\n", time.Since(time_start).Milliseconds())
+		os.Exit(0)
 	}
 }
