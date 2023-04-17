@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"log"
@@ -55,7 +56,7 @@ func NewTasks(href *bufio.Reader) Tasks {
 				out <- &Task{reqst: url.
 					Header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36").
 					Header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7").
-					Header("Accept-Encoding", "*"),
+					Header("Accept-Encoding", "gzip, deflate, br"),
 					num: i + j}
 			}
 		}
@@ -81,7 +82,20 @@ func (t *Task) parse(arg ...any) error {
 	}
 
 	out_chan := make(chan []byte)
-	rd := r.response.Body
+	var err error
+	var rd io.ReadCloser
+	fmt.Println("Content-Encoding>>>", r.response.Header.Get("Content-Encoding"))
+	switch r.response.Header.Get("Content-Encoding") {
+	case "gzip":
+		rd, err = gzip.NewReader(r.response.Body)
+		if err != nil {
+			log.Println("parse: error GET gzip", err)
+			return err
+		}
+	default:
+		rd = r.response.Body
+	}
+
 	go (html_block).Scrape(rd, out_chan)
 	defer r.response.Body.Close()
 
