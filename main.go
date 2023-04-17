@@ -76,7 +76,7 @@ func parsFlags() {
 		}
 		input_data = string(data)
 	case flag.Arg(0) != "":
-		input_data = flag.Arg(0)
+		input_data = flag.Arg(0) + "\n"
 	default:
 		fmt.Println("A flag is absent. The input file flag is expected...")
 		showHelp()
@@ -114,10 +114,10 @@ func main() {
 		fmt.Printf("output_file: %s\ninput_file: %s\nworkers: %d\n", out, input_file, workers)
 	}
 
-	run(input_data, &output_data)
-	if true {
-		fmt.Printf("END. Errors in log... Time %v ms.", time.Since(time_start).Milliseconds())
+	err := run(input_data, &output_data)
+	if err != nil {
+		fmt.Printf("END. Errors in log... Time %v ms.\n", time.Since(time_start).Milliseconds())
 	} else {
-		fmt.Printf("END. OK... Time %v ms.", time.Since(time_start).Milliseconds())
+		fmt.Printf("END. OK... Time %v ms.\n", time.Since(time_start).Milliseconds())
 	}
 }

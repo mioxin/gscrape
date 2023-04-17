@@ -31,11 +31,11 @@ func (o *OrgJson) Scrape(in io.Reader, out chan []byte) {
 	defer close(out)
 	doc, err := goquery.NewDocumentFromReader(in)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Scrape: error ", err)
 	}
-
 	doc.Find(SELECTOR).Each(func(i int, s *goquery.Selection) {
 		phones := GetMobileOnly(splitStr2Arr(strings.TrimSpace(s.Find("div.phone_icon").Text())))
+		//fmt.Println(phones)
 		if len(phones) > 0 {
 			o.Name = s.Find("a.name_link").Text()
 			o.Cat = s.Find("a.category_link").Text()
